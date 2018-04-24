@@ -38,7 +38,7 @@ GtkWidget *net_down_item;
 GtkWidget *net_up_item;
 GtkWidget *quit_item;
 
-gchar* format_net_label(int data, bool padding)
+gchar* format_net_label(int data, char* emoji, bool padding)
 {
     gchar *string;
     /*if(data < 1000)
@@ -54,6 +54,11 @@ gchar* format_net_label(int data, bool padding)
         string = g_strdup_printf("%.2f MiB/s", data/1048576.0);
     }
     //will someone have 1 gb/s ? maybe...
+
+    if (emoji)
+    {
+        string = g_strdup_printf ("%s    %s", emoji, string);
+    }
 
     if(padding)
     {
@@ -136,6 +141,47 @@ void get_net(int traffic[2])
     bytes_out_old = bytes_out;
 }
 
+gboolean update() {
+    //get sum of up and down net traffic and separate values
+    //and refresh labels of current interface
+    int net_traffic[2] = {0, 0};
+    get_net(net_traffic);
+    int net_down = net_traffic[0];
+    int net_up = net_traffic[1];
+    int net_total = net_down + net_up;
+
+    gchar *indicator_label = format_net_label(net_total, NULL, true);
+    gchar *label_guide = "10000.00 MiB/s";   //maximum length label text, doesn't really work atm
+    app_indicator_set_label(indicator, indicator_label, label_guide);
+    g_free(indicator_label);
+
+    gchar *net_down_label = format_net_label(net_down, "⬇️", false);
+    gtk_menu_item_set_label(GTK_MENU_ITEM(net_down_item), net_down_label);
+    g_free(net_down_label);
+
+    gchar *net_up_label = format_net_label(net_up, "⬆️", false);
+    gtk_menu_item_set_label(GTK_MENU_ITEM(net_up_item), net_up_label);
+    g_free(net_up_label);
+
+    if (net_down && net_up)
+    {
+        app_indicator_set_icon(indicator, "network-transmit-receive");
+    }
+    else if (net_down)
+    {
+        app_indicator_set_icon(indicator, "network-receive");
+    }
+    else if (net_up)
+    {
+        app_indicator_set_icon(indicator, "network-transmit");
+    }
+    else {
+        app_indicator_set_icon(indicator, "network-idle");
+    }
+
+    return TRUE;
+}
+
 void if_signal_select(GtkMenuItem *menu_item, gpointer user_data) {
     //set currently selected interface from user selection
     gchar *old_if_name = selected_if_name;
@@ -184,47 +230,6 @@ void add_netifs() {
     g_strfreev(interfaces);
 }
 
-gboolean update() {
-    //get sum of up and down net traffic and separate values
-    //and refresh labels of current interface
-    int net_traffic[2] = {0, 0};
-    get_net(net_traffic);
-    int net_down = net_traffic[0];
-    int net_up = net_traffic[1];
-    int net_total = net_down + net_up;
-
-    gchar *indicator_label = format_net_label(net_total, true);
-    gchar *label_guide = "10000.00 MiB/s";   //maximum length label text, doesn't really work atm
-    app_indicator_set_label(indicator, indicator_label, label_guide);
-    g_free(indicator_label);
-
-    gchar *net_down_label = format_net_label(net_down, false);
-    gtk_menu_item_set_label(GTK_MENU_ITEM(net_down_item), net_down_label);
-    g_free(net_down_label);
-
-    gchar *net_up_label = format_net_label(net_up, false);
-    gtk_menu_item_set_label(GTK_MENU_ITEM(net_up_item), net_up_label);
-    g_free(net_up_label);
-
-    if (net_down && net_up)
-    {
-        app_indicator_set_icon(indicator, "network-transmit-receive");
-    }
-    else if (net_down)
-    {
-        app_indicator_set_icon(indicator, "network-receive");
-    }
-    else if (net_up)
-    {
-        app_indicator_set_icon(indicator, "network-transmit");
-    }
-    else {
-        app_indicator_set_icon(indicator, "network-idle");
-    }
-
-    return TRUE;
-}
-
 int main (int argc, char **argv)
 {
     if (argc > 1 && strcmp("--trace", argv[1]) == 0)
@@ -257,16 +262,10 @@ int main (int argc, char **argv)
     gtk_menu_shell_append(GTK_MENU_SHELL(indicator_menu), sep);
 
     //add menu entries for up and down speed
-    net_down_item = gtk_image_menu_item_new_with_label("");
-    GtkWidget *net_down_icon = gtk_image_new_from_icon_name("network-receive", GTK_ICON_SIZE_MENU);
-    gtk_image_menu_item_set_image(GTK_IMAGE_MENU_ITEM(net_down_item), net_down_icon);
-    gtk_image_menu_item_set_always_show_image(GTK_IMAGE_MENU_ITEM(net_down_item), TRUE);
+    net_down_item = gtk_menu_item_new_with_label("");
     gtk_menu_shell_append(GTK_MENU_SHELL(indicator_menu), net_down_item);
 
-    net_up_item = gtk_image_menu_item_new_with_label("");
-    GtkWidget *net_up_icon = gtk_image_new_from_icon_name("network-transmit", GTK_ICON_SIZE_MENU);
-    gtk_image_menu_item_set_image(GTK_IMAGE_MENU_ITEM(net_up_item), net_up_icon);
-    gtk_image_menu_item_set_always_show_image(GTK_IMAGE_MENU_ITEM(net_up_item), TRUE);
+    net_up_item = gtk_menu_item_new_with_label("");
     gtk_menu_shell_append(GTK_MENU_SHELL(indicator_menu), net_up_item);
 
     //separator
