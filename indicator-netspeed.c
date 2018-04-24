@@ -184,16 +184,15 @@ gboolean update() {
 
 void if_signal_select(GtkMenuItem *menu_item, gpointer user_data) {
     //set currently selected interface from user selection
-    gchar *old_if_name = selected_if_name;
-    
+
     // We're allocating a new string here, but we don't need to free the previous
     // one because the call to gtk_menu_item_set_label below does that already. 
     selected_if_name = g_strdup(gtk_menu_item_get_label(menu_item));
     TRACE("Selected interface %s\n", selected_if_name);
     // frees the previous selected_if_name
-    gtk_menu_item_set_label(if_chosen, selected_if_name);
+    gtk_menu_item_set_label(GTK_MENU_ITEM(if_chosen), selected_if_name);
     g_settings_set_value (settings, "if-name", g_variant_new_string(selected_if_name));
-    
+
 
     first_run = TRUE;
     update();
@@ -254,7 +253,7 @@ int main (int argc, char **argv)
     //add interface names
     if_chosen = gtk_menu_item_new_with_label("");
     gtk_menu_shell_append(GTK_MENU_SHELL(indicator_menu), if_chosen);
-    gtk_menu_item_set_submenu (if_chosen, interfaces_menu);
+    gtk_menu_item_set_submenu (GTK_MENU_ITEM(if_chosen), interfaces_menu);
     add_netifs();
 
     //separator
