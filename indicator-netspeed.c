@@ -167,11 +167,11 @@ gboolean update() {
             app_indicator_set_label(indicator, "", "");
         }
 
-    gchar *net_down_label = format_net_label(net_down, "⬇️", false);
+    gchar *net_down_label = format_net_label(net_down, "🠋", false);
     gtk_menu_item_set_label(GTK_MENU_ITEM(net_down_item), net_down_label);
     g_free(net_down_label);
 
-    gchar *net_up_label = format_net_label(net_up, "⬆️", false);
+    gchar *net_up_label = format_net_label(net_up, "🠉", false);
     gtk_menu_item_set_label(GTK_MENU_ITEM(net_up_item), net_up_label);
     g_free(net_up_label);
 
