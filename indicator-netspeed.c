@@ -41,17 +41,24 @@ GtkWidget *quit_item;
 gchar* format_net_label(int data, char* emoji, bool padding)
 {
     gchar *string;
+
+    double speed = data/1024.0;
+    if (!data)
+    {
+        return NULL;
+    }
+
     /*if(data < 1000)
     {
         string = g_strdup_printf("%d B/s", data);
     }
-    else*/ if(data < 1000000)  //should be < 1 MiB and not 1 MB, but this keeps width smaller
+    else*/ if(speed < 1000000)  //should be < 1 MiB and not 1 MB, but this keeps width smaller
     {
-        string = g_strdup_printf("%.1f KiB/s", data/1024.0);
+        string = g_strdup_printf("%.1f KiB/s", speed);
     }
     else
     {
-        string = g_strdup_printf("%.2f MiB/s", data/1048576.0);
+        string = g_strdup_printf("%.2f MiB/s", speed/1024);
     }
     //will someone have 1 gb/s ? maybe...
 
@@ -151,9 +158,14 @@ gboolean update() {
     int net_total = net_down + net_up;
 
     gchar *indicator_label = format_net_label(net_total, NULL, true);
-    gchar *label_guide = "10000.00 MiB/s";   //maximum length label text, doesn't really work atm
-    app_indicator_set_label(indicator, indicator_label, label_guide);
-    g_free(indicator_label);
+    if (indicator_label)
+        {
+            gchar *label_guide = "10000.00 MiB/s";   //maximum length label text, doesn't really work atm
+            app_indicator_set_label(indicator, indicator_label, label_guide);
+            g_free(indicator_label);
+        } else {
+            app_indicator_set_label(indicator, "", "");
+        }
 
     gchar *net_down_label = format_net_label(net_down, "⬇️", false);
     gtk_menu_item_set_label(GTK_MENU_ITEM(net_down_item), net_down_label);
